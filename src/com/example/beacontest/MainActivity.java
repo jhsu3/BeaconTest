@@ -13,6 +13,9 @@ import android.os.Handler;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.Button;
 import android.widget.TextView;
 
 public class MainActivity extends Activity {
@@ -25,6 +28,7 @@ public class MainActivity extends Activity {
     private Handler mHandler;
     
     TextView textView;
+    Button scanButton;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -32,20 +36,37 @@ public class MainActivity extends Activity {
 		setContentView(R.layout.activity_main);
 		
 		textView = (TextView) findViewById(R.id.textView);
+		scanButton = (Button) findViewById(R.id.button);
 		mHandler = new Handler();
+		
+		// Use this check to determine whether BLE is supported on the device. Then
+		// you can selectively disable BLE-related features.
+		/*if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
+		    Toast.makeText(this, R.string.ble_not_supported, Toast.LENGTH_SHORT).show();
+		    finish();
+		}*/
 		
 		// Initializes Bluetooth adapter.
 		final BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
 		bluetoothAdapter = bluetoothManager.getAdapter();
+		//bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 		bls = bluetoothAdapter.getBluetoothLeScanner();
 		scanCallback = new ScanCallback()
 		{
 			@Override
 			public void onScanResult(int callbackType, ScanResult result)
 			{
-				super.onScanResult(callbackType, result);
+				//super.onScanResult(callbackType, result);
 				textView.setText(result.toString());
 				Log.d("onScanResult", result.toString());
+			}
+			
+			@Override
+			public void onScanFailed(int errorCode)
+			{
+				Log.d("onScanFailed", "errorCode "+errorCode);
+				//super.onScanFailed(errorCode);
+				textView.setText("onScanFailed "+errorCode);
 			}
 		};
 		
@@ -57,8 +78,16 @@ public class MainActivity extends Activity {
 		    //Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
 		    //startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
 		}
-		scanLeDevice(true);
 		
+		scanButton.setOnClickListener(new OnClickListener()
+		{
+			@Override
+			public void onClick(View arg0) {
+				//Log.d("onClick", "clicked");
+				textView.setText("Scanning...");
+				scanLeDevice(true);
+			}
+		});
 	}
 	
 	private void scanLeDevice(final boolean enable) {
@@ -77,16 +106,17 @@ public class MainActivity extends Activity {
                 }
             }, SCAN_PERIOD);
 
-            mScanning = true;
+            //mScanning = true;
             //bluetoothAdapter.startLeScan(scanCallback);
             bls.startScan(scanCallback);
         }
         else 
         {
-            mScanning = false;}
-            //bluetoothAdapter.stopLeScan(mLeScanCallback);
-        	bls.stopScan(scanCallback);
+            mScanning = false;
         }
+        //bluetoothAdapter.stopLeScan(mLeScanCallback);
+    	bls.stopScan(scanCallback);
+	}
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
