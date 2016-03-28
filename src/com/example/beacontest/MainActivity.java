@@ -1,6 +1,7 @@
 package com.example.beacontest;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
@@ -18,6 +19,9 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
@@ -40,7 +44,7 @@ public class MainActivity extends Activity
     ListView listView;
     Button scanButton;
     
-    ArrayAdapter aa;
+    ArrayAdapter<ScanResult> aa;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) 
@@ -67,14 +71,14 @@ public class MainActivity extends Activity
 			{
 				for(int i=0; i<aa.getCount(); i++)
 				{
-					if(result.getDevice().getAddress().equals(aa.getItem(i)))	//Check for duplicates using BluetoothDevice address? //String
+					if(result.getDevice().getAddress().equals(aa.getItem(i).getDevice().getAddress()))	//Check for duplicates using BluetoothDevice address? //String
 					{
 						//Duplicate
 						//Log.d("onScanResult duplicate", result.getDevice().getAddress());
 						return;
 					}
 				}
-				aa.add(result.getDevice().getAddress());	//Add to adapter
+				aa.add(result);	//Add to adapter
 			}
 			
 			@Override
@@ -92,12 +96,25 @@ public class MainActivity extends Activity
 			@Override
 			public void onLeScan(BluetoothDevice device, int rssi, byte[] scanRecord) 
 			{
-				Log.d("onLeScan", device.getAddress());
+				//Log.d("onLeScan", device.getAddress());
 			}
 		};
 		
-		aa = new ArrayAdapter(this, android.R.layout.simple_list_item_1);
+		aa = new ScanListAdapter(this, android.R.layout.simple_list_item_1);
 		listView.setAdapter(aa);
+		listView.setOnItemClickListener(new OnItemClickListener()
+		{
+			@Override
+			public void onItemClick(AdapterView<?> parent, View view, int position, long id) 
+			{
+				Log.d("onItemSelected", "Position "+position);
+				new AlertDialog.Builder(MainActivity.this)
+				.setTitle("Bluetooth Information")
+				.setMessage(aa.getItem(position).toString()).show();
+			}
+		});
+			
+		
 		
 		scanButton.setOnClickListener(new OnClickListener()
 		{
@@ -190,5 +207,25 @@ public class MainActivity extends Activity
 			return true;
 		}
 		return super.onOptionsItemSelected(item);
+	}
+	
+	public class ScanListAdapter extends ArrayAdapter<ScanResult>
+	{
+		Context context;
+		int resource;
+		TextView textView;
+		public ScanListAdapter(Context context, int resource) {
+			super(context, resource);
+			this.context = context;
+			this.resource = resource;
+		}
+		
+		@Override
+		public View getView(int position, View convertView, ViewGroup parent)
+		{
+			textView = (TextView) super.getView(position, convertView, parent);
+			textView.setText(getItem(position).getDevice().getAddress());
+			return textView;
+		}
 	}
 }
