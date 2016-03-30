@@ -1,5 +1,7 @@
 package com.example.beacontest;
 
+import com.example.beacontest.model.RawScanRecord;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
@@ -25,6 +27,8 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
+import android.widget.RelativeLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -78,6 +82,7 @@ public class MainActivity extends Activity
 						return;
 					}
 				}
+				if(!result.getDevice().fetchUuidsWithSdp()) Log.e("fetchUUID", "Fetch error");
 				aa.add(result);	//Add to adapter
 			}
 			
@@ -107,25 +112,40 @@ public class MainActivity extends Activity
 			@Override
 			public void onItemClick(AdapterView<?> parent, View view, int position, long id) 
 			{
-				Log.d("onItemSelected", "Position "+position);
-				new AlertDialog.Builder(MainActivity.this)
-				.setTitle("Bluetooth Information")
-				.setMessage(aa.getItem(position).toString()).show();
+				byte[] raw = aa.getItem(position).getScanRecord().getBytes();
+				String hexString = new String();
+				for(int i=0; i<raw.length; i++)
+				{
+					hexString = hexString.concat(String.format("%02X", raw[i]));
+				}
+				Log.d("hexString", hexString);
+				RawScanRecord rawRecord = new RawScanRecord(raw[0],raw[1],raw[2],raw[3],raw[4],getBytes(raw,5,9),getBytes(raw,9,25),getBytes(raw,25,27),getBytes(raw,27,29),raw[29]);
+				
+				AlertDialog alertBuilder = new AlertDialog.Builder(MainActivity.this)
+				.setTitle("Bluetooth Payload")
+				//.setMessage(aa.getItem(position).getScanRecord().toString()).show();
+				.setMessage(rawRecord.toString()).show();
 			}
 		});
-			
-		
 		
 		scanButton.setOnClickListener(new OnClickListener()
 		{
 			@Override
 			public void onClick(View arg0) {
-				Log.d("onClick", "clicked");
+				//Log.d("onClick", "clicked");
 				textView.setText("Scanning...");
 				aa.clear();
 				scanLeDevice(true);
 			}
 		});
+	}
+	
+	public byte[] getBytes(byte[] orig, int start, int end)
+	{
+		byte[] result = new byte[(end-start)+1];
+		result = java.util.Arrays.copyOfRange(orig, start, end);	//START IS INCLUSIVE, END IS EXCLUSIVE
+		//Log.d("getBytes", "length "+result.length);
+		return result;
 	}
 	
 	@Override
@@ -178,7 +198,7 @@ public class MainActivity extends Activity
                     	textView.setText("Timeout");
                     }
                 }
-            }, SCAN_PERIOD);
+            }, 1000);
 
             if(Build.VERSION.SDK_INT<21) bluetoothAdapter.startLeScan(leScanCallback);
             else bls.startScan(scanCallback);
@@ -214,7 +234,8 @@ public class MainActivity extends Activity
 		Context context;
 		int resource;
 		TextView textView;
-		public ScanListAdapter(Context context, int resource) {
+		public ScanListAdapter(Context context, int resource) 
+		{
 			super(context, resource);
 			this.context = context;
 			this.resource = resource;
