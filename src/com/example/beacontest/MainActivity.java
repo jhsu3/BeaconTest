@@ -27,8 +27,6 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
-import android.widget.RelativeLayout;
-import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -118,8 +116,8 @@ public class MainActivity extends Activity
 				{
 					hexString = hexString.concat(String.format("%02X", raw[i]));
 				}
-				Log.d("hexString", hexString);
-				RawScanRecord rawRecord = new RawScanRecord(raw[0],raw[1],raw[2],raw[3],raw[4],getBytes(raw,5,9),getBytes(raw,9,25),getBytes(raw,25,27),getBytes(raw,27,29),raw[29]);
+				//Log.d("hexString", hexString);
+				RawScanRecord rawRecord = new RawScanRecord(getBytes(raw,0,1),getBytes(raw,1,2),getBytes(raw,2,3),getBytes(raw,3,4),getBytes(raw,4,5),getBytes(raw,5,9),getBytes(raw,9,25),getBytes(raw,25,27),getBytes(raw,27,29),getBytes(raw,29,30));
 				
 				AlertDialog alertBuilder = new AlertDialog.Builder(MainActivity.this)
 				.setTitle("Bluetooth Payload")
@@ -142,8 +140,7 @@ public class MainActivity extends Activity
 	
 	public byte[] getBytes(byte[] orig, int start, int end)
 	{
-		byte[] result = new byte[(end-start)+1];
-		result = java.util.Arrays.copyOfRange(orig, start, end);	//START IS INCLUSIVE, END IS EXCLUSIVE
+		byte[] result = java.util.Arrays.copyOfRange(orig, start, end);	//START IS INCLUSIVE, END IS EXCLUSIVE
 		//Log.d("getBytes", "length "+result.length);
 		return result;
 	}
@@ -198,7 +195,7 @@ public class MainActivity extends Activity
                     	textView.setText("Timeout");
                     }
                 }
-            }, 1000);
+            }, SCAN_PERIOD);
 
             if(Build.VERSION.SDK_INT<21) bluetoothAdapter.startLeScan(leScanCallback);
             else bls.startScan(scanCallback);
