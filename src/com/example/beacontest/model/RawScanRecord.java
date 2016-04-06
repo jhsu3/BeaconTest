@@ -2,6 +2,8 @@ package com.example.beacontest.model;
 
 public class RawScanRecord 
 {
+	public String deviceAddress;
+	
 	//iBeacon prefix
 	//02 01 06 1A FF 4C 00 02 15
 	byte[] dataLength0 = new byte[1];				//x02
@@ -15,10 +17,11 @@ public class RawScanRecord
 	byte[] minor = new byte[2];						//2 byte minor
 	byte[] signalPower = new byte[1];				//Two's complement of measured power
 	
-	public RawScanRecord(byte[] dataLength0, byte[] dataTypeFlags, byte[] LEflag, 
+	public RawScanRecord(String deviceAddress, byte[] dataLength0, byte[] dataTypeFlags, byte[] LEflag, 
 			byte[] dataLength1, byte[] dataTypeManufacturer, byte[] manufacturerData, byte[] UUID, 
 			byte[] major, byte[] minor, byte[] signalPower)
 	{
+		this.deviceAddress = deviceAddress;
 		this.dataLength0 = dataLength0;
 		this.dataTypeFlags = dataTypeFlags;
 		this.LEflag = LEflag;
@@ -33,7 +36,8 @@ public class RawScanRecord
 	
 	public String toString()
 	{
-		String result = "AD0 length "+formatByteArray(dataLength0)+"\n"
+		String result = deviceAddress
+				+"\nAD0 length "+formatByteArray(dataLength0)+"\n"
 				+"AD0 type "+formatByteArray(dataTypeFlags)+"\n"
 				+"Payload (Advertising type flags) "+formatByteArray(LEflag)+"\n"
 				+"AD1 length "+formatByteArray(dataLength1)+"\n"

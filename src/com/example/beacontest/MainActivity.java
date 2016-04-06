@@ -46,7 +46,7 @@ public class MainActivity extends Activity
     ListView listView;
     Button scanButton;
     
-    ArrayAdapter<ScanResult> aa;
+    ArrayAdapter<RawScanRecord> aa;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) 
@@ -73,15 +73,26 @@ public class MainActivity extends Activity
 			{
 				for(int i=0; i<aa.getCount(); i++)
 				{
-					if(result.getDevice().getAddress().equals(aa.getItem(i).getDevice().getAddress()))	//Check for duplicates using BluetoothDevice address? //String
+					if(result.getDevice().getAddress().equals(aa.getItem(i).deviceAddress))	//Check for duplicates using BluetoothDevice address? //String
 					{
 						//Duplicate
 						//Log.d("onScanResult duplicate", result.getDevice().getAddress());
 						return;
 					}
 				}
-				if(!result.getDevice().fetchUuidsWithSdp()) Log.e("fetchUUID", "Fetch error");
-				aa.add(result);	//Add to adapter
+				byte[] raw = result.getScanRecord().getBytes();
+				RawScanRecord rawRecord = new RawScanRecord(result.getDevice().getAddress(),
+						getBytes(raw,0,1),
+						getBytes(raw,1,2),
+						getBytes(raw,2,3),
+						getBytes(raw,3,4),
+						getBytes(raw,4,5),
+						getBytes(raw,5,9),
+						getBytes(raw,9,25),
+						getBytes(raw,25,27),
+						getBytes(raw,27,29),
+						getBytes(raw,29,30));
+				aa.add(rawRecord);	//Add to adapter
 			}
 			
 			@Override
@@ -100,6 +111,27 @@ public class MainActivity extends Activity
 			public void onLeScan(BluetoothDevice device, int rssi, byte[] scanRecord) 
 			{
 				//Log.d("onLeScan", device.getAddress());
+				for(int i=0; i<aa.getCount(); i++)
+				{
+					if(device.getAddress().equals(aa.getItem(i).deviceAddress))	//Check for duplicates using BluetoothDevice address? //String
+					{
+						//Duplicate
+						//Log.d("onScanResult duplicate", result.getDevice().getAddress());
+						return;
+					}
+				}
+				RawScanRecord rawRecord = new RawScanRecord(device.getAddress(),
+						getBytes(scanRecord,0,1),
+						getBytes(scanRecord,1,2),
+						getBytes(scanRecord,2,3),
+						getBytes(scanRecord,3,4),
+						getBytes(scanRecord,4,5),
+						getBytes(scanRecord,5,9),
+						getBytes(scanRecord,9,25),
+						getBytes(scanRecord,25,27),
+						getBytes(scanRecord,27,29),
+						getBytes(scanRecord,29,30));
+				aa.add(rawRecord);	//Add to adapter
 			}
 		};
 		
@@ -109,20 +141,11 @@ public class MainActivity extends Activity
 		{
 			@Override
 			public void onItemClick(AdapterView<?> parent, View view, int position, long id) 
-			{
-				byte[] raw = aa.getItem(position).getScanRecord().getBytes();
-				String hexString = new String();
-				for(int i=0; i<raw.length; i++)
-				{
-					hexString = hexString.concat(String.format("%02X", raw[i]));
-				}
-				//Log.d("hexString", hexString);
-				RawScanRecord rawRecord = new RawScanRecord(getBytes(raw,0,1),getBytes(raw,1,2),getBytes(raw,2,3),getBytes(raw,3,4),getBytes(raw,4,5),getBytes(raw,5,9),getBytes(raw,9,25),getBytes(raw,25,27),getBytes(raw,27,29),getBytes(raw,29,30));
-				
+			{	
 				AlertDialog alertBuilder = new AlertDialog.Builder(MainActivity.this)
 				.setTitle("Bluetooth Payload")
 				//.setMessage(aa.getItem(position).getScanRecord().toString()).show();
-				.setMessage(rawRecord.toString()).show();
+				.setMessage(aa.getItem(position).toString()).show();
 			}
 		});
 		
@@ -163,8 +186,6 @@ public class MainActivity extends Activity
 		bluetoothAdapter = bluetoothManager.getAdapter();
 		//bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 		bls = bluetoothAdapter.getBluetoothLeScanner();
-		
-		
 	}
 	
 	@Override
@@ -226,7 +247,7 @@ public class MainActivity extends Activity
 		return super.onOptionsItemSelected(item);
 	}
 	
-	public class ScanListAdapter extends ArrayAdapter<ScanResult>
+	public class ScanListAdapter extends ArrayAdapter<RawScanRecord>
 	{
 		Context context;
 		int resource;
@@ -242,7 +263,7 @@ public class MainActivity extends Activity
 		public View getView(int position, View convertView, ViewGroup parent)
 		{
 			textView = (TextView) super.getView(position, convertView, parent);
-			textView.setText(getItem(position).getDevice().getAddress());
+			textView.setText(getItem(position).deviceAddress);
 			return textView;
 		}
 	}
